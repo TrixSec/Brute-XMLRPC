@@ -1,6 +1,6 @@
 ## Author
 **Author**: Trix Cyrus  
-**Copyright**: © 2024 Trixsec Org   
+**Copyright**: © 2025 Trixsec Org   
 **Maintained**: Yes 
 
 ## Overview
@@ -32,11 +32,6 @@ pip install requests colorama termcolor
     ```bash
     git clone https://github.com/TrixSec/Brute-XMLRPC.git
     cd Brute-XMLRPC
-    ```
-
-2. Install dependencies:
-    ```bash
-    pip install -r requirements.txt
     ```
 
 ## Usage
