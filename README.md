@@ -50,3 +50,5 @@ pip install requests colorama termcolor
 
 ## Disclaimer
 This tool is intended for educational purposes only. Unauthorized use of this tool to compromise or damage systems is illegal and unethical. The developers are not responsible for any misuse or damage caused by this tool.
+
+**Repository Views** ![Views](https://profile-counter.glitch.me/Brutexmlrpc/count.svg)
