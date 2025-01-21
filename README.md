@@ -37,7 +37,7 @@ pip install requests colorama termcolor
 ## Usage
 1. Run the script:
     ```bash
-    python brutecxmlrpc..py
+    python brutecxmlrpc.py
     ```
 
 2. Follow the prompts to:
