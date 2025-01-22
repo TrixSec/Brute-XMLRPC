@@ -7,6 +7,9 @@ from termcolor import colored
 import random
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+from urllib.parse import urljoin
+from bs4 import BeautifulSoup
+
 
 init(autoreset=True)
 
@@ -46,18 +49,24 @@ def set_custom_headers():
     }
 
 def check_xmlrpc_available(url):
-    headers = set_custom_headers()
-    data = """
-    <methodCall>
-        <methodName>system.multicall</methodName>
-        <params></params>
-    </methodCall>
-    """
-    
     try:
-        response = requests.post(url, data=data, headers=headers, timeout=5, verify=False)
-        if response.status_code == 200 and "faultCode" not in response.text:
-            return True
+        headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.5481.177 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Connection': 'keep-alive'
+        }
+        response = requests.get(url, headers=headers, timeout=15, verify=False)
+        response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+
+        soup = BeautifulSoup(response.content, 'html.parser')
+        link_tag = soup.find('link', rel='pingback')
+       
+        if link_tag and link_tag.get('href'):
+          expected_xmlrpc_url = urljoin(url, "xmlrpc.php")
+          if link_tag['href'] == expected_xmlrpc_url:
+              return True
+        
         return False
     except requests.RequestException:
         return False
