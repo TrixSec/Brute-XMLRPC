@@ -58,13 +58,25 @@ def generate_random_headers(target_url):
 
     referer_domains = [
         "https://google.com",
-        "https://bing.com",
+        "https://bing.com", 
         "https://duckduckgo.com",
         "https://www.startpage.com/",
         "https://yahoo.com",
         "https://baidu.com",
         "https://yandex.com",
         "https://ecosia.org",
+        "https://qwant.com",
+        "https://search.brave.com",
+        "https://swisscows.com",
+        "https://metager.org",
+        "https://mojeek.com",
+        "https://gibiru.com",
+        "https://searchencrypt.com",
+        "https://lukol.com",
+        "https://oscobo.com",
+        "https://disconnect.me",
+        "https://peekier.com",
+        "https://boardreader.com"
     ]
 
     parsed_url = urlparse(target_url)
@@ -122,7 +134,67 @@ async def check_xmlrpc_available(url, session, retries=3, delay=2):
           </params>
         </methodCall>
         """,
-        # Add more payload variations here
+        """
+        <methodCall>
+          <methodName>system.methodSignature</methodName>
+          <params>
+            <param>
+              <value><string>system.listMethods</string></value>
+            </param>
+          </params>
+        </methodCall>
+        """,
+        """
+        <methodCall>
+          <methodName>system.methodSignature</methodName>
+          <params>
+            <param>
+              <value><string>system.getCapabilities</string></value>
+            </param>
+          </params>
+        </methodCall>
+        """,
+        """
+        <methodCall>
+          <methodName>system.methodSignature</methodName>
+          <params>
+            <param>
+              <value><string>system.methodHelp</string></value>
+            </param>
+          </params>
+        </methodCall>
+        """,
+        """
+        <methodCall>
+          <methodName>system.multicall</methodName>
+          <params>
+            <param>
+              <value>
+                <array>
+                  <data>
+                    <value>
+                      <struct>
+                        <member>
+                          <name>methodName</name>
+                          <value><string>system.listMethods</string></value>
+                        </member>
+                      </struct>
+                    </value>
+                    <value>
+                      <struct>
+                        <member>
+                          <name>methodName</name>
+                          <value><string>system.getCapabilities</string></value>
+                        </member>
+                      </struct>
+                    </value>
+                  </data>
+                </array>
+              </value>
+            </param>
+          </params>
+        </methodCall>
+        """
     ]
     
     for attempt in range(retries):
