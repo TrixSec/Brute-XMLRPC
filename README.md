@@ -14,6 +14,28 @@
 - **Interactive Input**: Easy-to-use prompts for user input and configuration.
 - **Progress Display**: Real-time display of brute force attempts and progress.
 
+## **Key Changes and Improvements:**  
+
+1. **Proxy Handling with `aiohttp-socks`:**  
+   - Integrated `aiohttp-socks` for SOCKS5 proxy support, ensuring compatibility with Tor.  
+   - Replaced direct proxy arguments with `ProxyConnector` for streamlined connection management.  
+
+2. **Enhanced Header and User-Agent Spoofing:**  
+   - Expanded `user_agents` list with mobile browsers, old browsers, and bots.  
+   - Broadened `referer_domains` and added randomized `Accept-Language`, `Accept-Encoding`, `Forwarded`, `DNT`, `Origin`, and `Cache-Control` headers for increased variety.  
+
+3. **Payload Variation in `check_xmlrpc_available`:**  
+   - Introduced random payloads (`system.getCapabilities`, `system.methodHelp`, etc.) for more robust testing.  
+
+4. **Retry Logic and Rate Limiting:**  
+   - Added retry mechanism with delays and handling of `429` responses using `Retry-After` header.  
+
+5. **WAF Detection:**  
+   - Added `check_for_waf` to identify 403 responses indicating a WAF and log detections in `WAF_DETECTED_LOG`.  
+
+6. **Deprecated Method Removal:**  
+   - Replaced `SocksConnector.create` with `ProxyConnector` for modern and non-deprecated proxy handling.  
+
 ## Requirements
 - Python 3.x
 - Required Python packages:
